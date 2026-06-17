@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import AddIdeaModal from "@/components/AddIdeaModal";
+import IdeaGrid from "@/components/IdeaGrid";
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [savedCount, setSavedCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   function handleSaved() {
     setIsModalOpen(false);
-    setSavedCount((c) => c + 1);
+    setRefreshKey((k) => k + 1);
   }
 
   return (
@@ -28,11 +29,7 @@ export default function Home() {
           </button>
         </header>
 
-        {savedCount > 0 && (
-          <p className="text-green-400 text-sm">
-            {savedCount} idea{savedCount !== 1 ? "s" : ""} saved this session ✓
-          </p>
-        )}
+        <IdeaGrid refreshKey={refreshKey} />
 
         {isModalOpen && (
           <AddIdeaModal
