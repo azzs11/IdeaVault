@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import IdeaCard from "./IdeaCard";
+import DomainFilter from "./DomainFilter";
 import { supabase } from "@/lib/supabase";
-import type { Idea } from "@/lib/types";
+import { DOMAINS } from "@/lib/types";
+import type { Idea, Domain } from "@/lib/types";
 
 export default function IdeaGrid({ refreshKey }: { refreshKey: number }) {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeDomain, setActiveDomain] = useState<Domain | "All">("All");
 
   useEffect(() => {
     async function fetchIdeas() {
@@ -29,6 +32,18 @@ export default function IdeaGrid({ refreshKey }: { refreshKey: number }) {
     fetchIdeas();
   }, [refreshKey]);
 
+  const filtered =
+    activeDomain === "All"
+      ? ideas
+      : ideas.filter((i) => i.domain === activeDomain);
+
+  const counts: Partial<Record<Domain | "All", number>> = {
+    All: ideas.length,
+    ...Object.fromEntries(
+      DOMAINS.map((d) => [d, ideas.filter((i) => i.domain === d).length])
+    ),
+  };
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
@@ -43,23 +58,46 @@ export default function IdeaGrid({ refreshKey }: { refreshKey: number }) {
   }
 
   if (error) {
-    return <p className="text-red-400 text-sm mt-6">Failed to load ideas: {error}</p>;
-  }
-
-  if (ideas.length === 0) {
     return (
-      <div className="text-center mt-24">
-        <p className="text-gray-500 text-lg">No ideas yet.</p>
-        <p className="text-gray-600 text-sm mt-1">Hit &ldquo;+ New Idea&rdquo; to add your first one.</p>
-      </div>
+      <p className="text-red-400 text-sm mt-6">Failed to load ideas: {error}</p>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-      {ideas.map((idea) => (
-        <IdeaCard key={idea.id} idea={idea} />
-      ))}
+    <div>
+      <DomainFilter
+        active={activeDomain}
+        onChange={setActiveDomain}
+        counts={counts}
+      />
+
+      {ideas.length === 0 ? (
+        <div className="text-center mt-24">
+          <p className="text-gray-500 text-lg">No ideas yet.</p>
+          <p className="text-gray-600 text-sm mt-1">
+            Hit &ldquo;+ New Idea&rdquo; to add your first one.
+          </p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center mt-24">
+          <p className="text-gray-500 text-lg">No {activeDomain} ideas yet.</p>
+          <p className="text-gray-600 text-sm mt-1">
+            Try a different filter or add a new idea.
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="text-xs text-gray-500 mt-4 mb-1">
+            {filtered.length} {filtered.length === 1 ? "idea" : "ideas"}
+            {activeDomain !== "All" ? ` in ${activeDomain}` : ""}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
+            {filtered.map((idea) => (
+              <IdeaCard key={idea.id} idea={idea} />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
