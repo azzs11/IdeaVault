@@ -1,38 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic();
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(req: NextRequest) {
-  const { idea } = await req.json();
+  const { content } = await req.json();
 
-  if (!idea || typeof idea !== "string") {
-    return NextResponse.json({ error: "Missing idea text" }, { status: 400 });
+  if (!content || typeof content !== "string") {
+    return NextResponse.json({ error: "Missing content" }, { status: 400 });
   }
 
   const message = await client.messages.create({
-    model: "claude-sonnet-4-6",
+    model: "claude-haiku-4-5",
     max_tokens: 256,
     messages: [
       {
         role: "user",
-        content: `Categorize the following idea into exactly one of these domains: Tech, Product, Business, Design, Personal, Research, Other.
-Also write a one-sentence summary.
+        content: `You are a startup idea classifier. Given a raw idea, return a JSON object with two fields:
+- "domain": one of exactly these values: Tech, Product, Business, Design, Personal, Research, Other
+- "summary": a single clear sentence (max 20 words) that captures the core of the idea
 
-Idea: "${idea}"
+Respond with raw JSON only. No markdown, no explanation.
 
-Respond with JSON only, no markdown:
-{"domain": "<domain>", "summary": "<one-sentence summary>"}`,
+Idea: "${content}"`,
       },
     ],
   });
 
-  const text = message.content[0].type === "text" ? message.content[0].text : "";
+  const text =
+    message.content[0].type === "text" ? message.content[0].text.trim() : "";
 
   try {
     const result = JSON.parse(text);
     return NextResponse.json(result);
   } catch {
-    return NextResponse.json({ error: "Failed to parse Claude response", raw: text }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to parse AI response", raw: text },
+      { status: 500 }
+    );
   }
 }
