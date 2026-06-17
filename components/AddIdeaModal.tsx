@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { DOMAINS } from "@/lib/types";
-import type { Domain } from "@/lib/types";
+import { DOMAINS, STATUSES } from "@/lib/types";
+import type { Domain, Status } from "@/lib/types";
 
 interface Props {
   onClose: () => void;
@@ -13,6 +13,7 @@ interface Props {
 export default function AddIdeaModal({ onClose, onSaved }: Props) {
   const [content, setContent] = useState("");
   const [domain, setDomain] = useState<Domain>("Tech");
+  const [status, setStatus] = useState<Status>("New");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -26,6 +27,7 @@ export default function AddIdeaModal({ onClose, onSaved }: Props) {
     const { error: dbError } = await supabase.from("ideas").insert({
       content: content.trim(),
       domain,
+      status,
       summary: null,
     });
 
@@ -65,20 +67,34 @@ export default function AddIdeaModal({ onClose, onSaved }: Props) {
             className="w-full bg-gray-800 border border-gray-700 rounded-lg p-3 text-sm text-gray-100 placeholder-gray-500 resize-none focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-60"
           />
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs text-gray-400 font-medium">Domain</label>
-            <select
-              value={domain}
-              onChange={(e) => setDomain(e.target.value as Domain)}
-              disabled={loading}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-60"
-            >
-              {DOMAINS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-gray-400 font-medium">Domain</label>
+              <select
+                value={domain}
+                onChange={(e) => setDomain(e.target.value as Domain)}
+                disabled={loading}
+                className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-60"
+              >
+                {DOMAINS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-gray-400 font-medium">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as Status)}
+                disabled={loading}
+                className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-60"
+              >
+                {STATUSES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
