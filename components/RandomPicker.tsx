@@ -4,24 +4,17 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Shuffle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import type { Idea, Domain } from "@/lib/types";
-
-const DOMAIN_COLORS: Record<Domain, string> = {
-  Tech:     "bg-blue-500/15 text-blue-300 border-blue-500/25",
-  Product:  "bg-violet-500/15 text-violet-300 border-violet-500/25",
-  Business: "bg-emerald-500/15 text-emerald-300 border-emerald-500/25",
-  Design:   "bg-pink-500/15 text-pink-300 border-pink-500/25",
-  Personal: "bg-amber-500/15 text-amber-300 border-amber-500/25",
-  Research: "bg-orange-500/15 text-orange-300 border-orange-500/25",
-  Other:    "bg-slate-500/15 text-slate-300 border-slate-500/25",
-};
+import { guestStore } from "@/lib/guestStore";
+import { STATUS_COLOR } from "@/lib/types";
+import type { Idea, Status } from "@/lib/types";
 
 interface Props {
-  vaultId: string;
+  vaultId?: string;
   onClose: () => void;
+  guest?: boolean;
 }
 
-export default function RandomPicker({ vaultId, onClose }: Props) {
+export default function RandomPicker({ vaultId, onClose, guest = false }: Props) {
   const [idea, setIdea] = useState<Idea | null>(null);
   const [loading, setLoading] = useState(false);
   const [picked, setPicked] = useState(false);
@@ -29,17 +22,20 @@ export default function RandomPicker({ vaultId, onClose }: Props) {
 
   async function pickRandom() {
     setLoading(true);
-    const { data } = await supabase
-      .from("ideas")
-      .select("*, author:profiles!ideas_author_id_fkey(name)")
-      .eq("vault_id", vaultId)
-      .neq("status", "Archived");
 
-    if (data && data.length > 0) {
-      setIdea(data[Math.floor(Math.random() * data.length)] as Idea);
+    let pool: Idea[];
+    if (guest) {
+      pool = guestStore.list().filter((i) => i.status !== "Archived");
     } else {
-      setIdea(null);
+      const { data } = await supabase
+        .from("ideas")
+        .select("*, author:profiles!ideas_author_id_fkey(name)")
+        .eq("vault_id", vaultId)
+        .neq("status", "Archived");
+      pool = (data as Idea[]) ?? [];
     }
+
+    setIdea(pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null);
     setPicked(true);
     setPickCount((c) => c + 1);
     setLoading(false);
@@ -50,28 +46,33 @@ export default function RandomPicker({ vaultId, onClose }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      style={{ zIndex: "var(--z-backdrop)" }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        initial={{ opacity: 0, scale: 0.97, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
-        className="glass-strong rounded-2xl w-full max-w-lg p-6 shadow-2xl"
+        transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        role="dialog" aria-modal="true" aria-label="Random idea picker"
+        className="panel rounded-2xl w-full max-w-lg p-6 shadow-2xl"
+        style={{ zIndex: "var(--z-modal)" }}
       >
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-              <Shuffle size={15} className="text-indigo-400" />
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--accent-soft)" }}>
+              <Shuffle size={15} style={{ color: "var(--accent)" }} />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-slate-100">Surprise me</h2>
-              {pickCount > 0 && <p className="text-[11px] text-slate-500">Pick #{pickCount}</p>}
+              <h2 className="text-sm font-semibold" style={{ color: "var(--ink)" }}>Surprise me</h2>
+              {pickCount > 0 && <p className="text-[11px]" style={{ color: "var(--text-3)" }}>Pick #{pickCount}</p>}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] transition-all"
+            aria-label="Close"
+            className="w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-white/[0.06]"
+            style={{ color: "var(--text-2)" }}
           >
             <X size={16} />
           </button>
@@ -87,49 +88,53 @@ export default function RandomPicker({ vaultId, onClose }: Props) {
               >
                 🎲
               </motion.div>
-              <p className="text-slate-400 mb-6 text-sm">Pick a random non-archived idea from your vault</p>
+              <p className="mb-6 text-sm" style={{ color: "var(--text-2)" }}>Pick a random non-archived idea from your vault</p>
               <button
                 onClick={pickRandom}
                 disabled={loading}
-                className="flex items-center gap-2 mx-auto px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-60 text-white text-sm font-medium transition-all shadow-lg shadow-indigo-500/25"
+                className="btn-accent mx-auto px-6 py-3 text-sm"
               >
                 {loading ? "Picking…" : <><Shuffle size={14} /> Pick an idea</>}
               </button>
             </motion.div>
           ) : !idea ? (
             <motion.div key="empty" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-center py-8">
-              <p className="text-slate-400">No active ideas in your vault yet.</p>
-              <p className="text-slate-600 text-sm mt-1">Add some ideas first!</p>
+              <p style={{ color: "var(--ink)" }}>No active ideas in your vault yet.</p>
+              <p className="text-sm mt-1" style={{ color: "var(--text-2)" }}>Add some ideas first.</p>
             </motion.div>
           ) : (
             <motion.div
               key={pickCount}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
               className="flex flex-col gap-4"
             >
-              <div className="glass rounded-xl p-4 flex flex-col gap-3">
+              <div className="rounded-xl p-4 flex flex-col gap-3" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <div className="flex items-center justify-between gap-2">
-                  <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${DOMAIN_COLORS[idea.domain] ?? DOMAIN_COLORS.Other}`}>
+                  <span className="text-[11px] font-medium px-2.5 py-1 rounded-full"
+                    style={{ background: "rgba(255,255,255,0.05)", color: "var(--text-2)", border: "1px solid var(--border)" }}>
                     {idea.domain}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-slate-500 font-medium">{idea.status}</span>
-                    <span className="text-[11px] text-slate-600">
+                    <span className="text-[11px] font-medium flex items-center gap-1.5" style={{ color: "var(--text-2)" }}>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_COLOR[idea.status as Status] }} />
+                      {idea.status}
+                    </span>
+                    <span className="text-[11px]" style={{ color: "var(--text-3)" }}>
                       {new Date(idea.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                     </span>
                   </div>
                 </div>
 
-                <p className="text-slate-100 text-sm leading-relaxed">{idea.content}</p>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--ink)" }}>{idea.content}</p>
 
                 {idea.summary && (
-                  <p className="text-slate-500 text-xs italic border-l-2 border-white/10 pl-3">{idea.summary}</p>
+                  <p className="text-xs italic rounded-lg px-3 py-2" style={{ color: "var(--text-2)", background: "rgba(255,255,255,0.03)" }}>{idea.summary}</p>
                 )}
 
                 {idea.author?.name && (
-                  <p className="text-[11px] text-slate-600">Added by {idea.author.name}</p>
+                  <p className="text-[11px]" style={{ color: "var(--text-3)" }}>Added by {idea.author.name}</p>
                 )}
               </div>
             </motion.div>
@@ -141,13 +146,14 @@ export default function RandomPicker({ vaultId, onClose }: Props) {
             <button
               onClick={pickRandom}
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-60 text-white text-sm font-medium transition-all"
+              className="btn-accent flex-1 py-2.5 text-sm"
             >
               <Shuffle size={13} /> {loading ? "Picking…" : "Pick another"}
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2.5 text-sm text-slate-400 hover:text-slate-200 transition-colors"
+              className="px-4 py-2.5 text-sm transition-colors"
+              style={{ color: "var(--text-2)" }}
             >
               Done
             </button>

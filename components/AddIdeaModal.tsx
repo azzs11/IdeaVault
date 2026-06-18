@@ -5,17 +5,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+import { guestStore } from "@/lib/guestStore";
 import { DOMAINS, STATUSES } from "@/lib/types";
 import type { Domain, Status } from "@/lib/types";
 
 interface Props {
   onClose: () => void;
   onSaved: () => void;
-  vaultId: string;
-  authorId: string;
+  vaultId?: string;
+  authorId?: string;
+  guest?: boolean;
 }
 
-export default function AddIdeaModal({ onClose, onSaved, vaultId, authorId }: Props) {
+export default function AddIdeaModal({ onClose, onSaved, vaultId, authorId, guest = false }: Props) {
   const [content, setContent] = useState("");
   const [domain, setDomain] = useState<Domain>("Tech");
   const [status, setStatus] = useState<Status>("New");
@@ -31,6 +33,14 @@ export default function AddIdeaModal({ onClose, onSaved, vaultId, authorId }: Pr
     e.preventDefault();
     if (!content.trim()) return;
     setLoading(true);
+
+    if (guest) {
+      guestStore.add({ content: content.trim(), domain, status });
+      toast.success("Saved on this device");
+      onSaved();
+      setLoading(false);
+      return;
+    }
 
     const { error } = await supabase.from("ideas").insert({
       content: content.trim(), domain, status,
@@ -52,24 +62,29 @@ export default function AddIdeaModal({ onClose, onSaved, vaultId, authorId }: Pr
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+        style={{ zIndex: "var(--z-backdrop)" }}
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          initial={{ opacity: 0, scale: 0.97, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          transition={{ duration: 0.2, ease: [0.34, 1.56, 0.64, 1] }}
-          className="glass-strong rounded-2xl w-full max-w-lg p-6 shadow-2xl"
+          exit={{ opacity: 0, scale: 0.97, y: 10 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          role="dialog" aria-modal="true" aria-label="New idea"
+          className="panel rounded-2xl w-full max-w-lg p-6 shadow-2xl"
+          style={{ zIndex: "var(--z-modal)" }}
         >
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-base font-semibold text-slate-100">New Idea</h2>
-              <p className="text-xs text-slate-500 mt-0.5">Add context, pick a domain and status</p>
+              <h2 className="text-base font-semibold" style={{ color: "var(--ink)" }}>New idea</h2>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-2)" }}>Add context, pick a domain and status</p>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/[0.06] transition-all"
+              aria-label="Close"
+              className="w-8 h-8 flex items-center justify-center rounded-lg transition-all hover:bg-white/[0.06]"
+              style={{ color: "var(--text-2)" }}
             >
               <X size={16} />
             </button>
@@ -80,31 +95,32 @@ export default function AddIdeaModal({ onClose, onSaved, vaultId, authorId }: Pr
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Describe your idea in as much or as little detail as you want…"
+              aria-label="Idea description"
               rows={5}
               autoFocus
               disabled={loading}
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl p-3.5 text-sm text-slate-200 placeholder-slate-600 resize-none focus:outline-none focus:border-indigo-500/50 transition-all disabled:opacity-60 leading-relaxed"
+              className="input-field p-3.5 text-sm resize-none disabled:opacity-60 leading-relaxed"
             />
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Domain</label>
+                <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: "var(--text-3)" }}>Domain</label>
                 <select
                   value={domain}
                   onChange={(e) => setDomain(e.target.value as Domain)}
                   disabled={loading}
-                  className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-300 focus:outline-none focus:border-indigo-500/50 transition-colors disabled:opacity-60"
+                  className="input-field px-3 py-2.5 text-sm disabled:opacity-60"
                 >
                   {DOMAINS.map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-medium text-slate-500 uppercase tracking-wide">Status</label>
+                <label className="text-[11px] font-medium uppercase tracking-wide" style={{ color: "var(--text-3)" }}>Status</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as Status)}
                   disabled={loading}
-                  className="bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-slate-300 focus:outline-none focus:border-indigo-500/50 transition-colors disabled:opacity-60"
+                  className="input-field px-3 py-2.5 text-sm disabled:opacity-60"
                 >
                   {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -116,16 +132,17 @@ export default function AddIdeaModal({ onClose, onSaved, vaultId, authorId }: Pr
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2.5 text-sm text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-40"
+                className="px-4 py-2.5 text-sm transition-colors disabled:opacity-40"
+                style={{ color: "var(--text-2)" }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading || !content.trim()}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-all shadow-lg shadow-indigo-500/20"
+                className="btn-accent px-5 py-2.5 text-sm"
               >
-                {loading ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : "Save Idea"}
+                {loading ? <><Loader2 size={14} className="animate-spin" /> Saving…</> : "Save idea"}
               </button>
             </div>
           </form>
