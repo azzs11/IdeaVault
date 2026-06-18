@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import QuickAdd from "@/components/QuickAdd";
 import AddIdeaModal from "@/components/AddIdeaModal";
 import IdeaGrid from "@/components/IdeaGrid";
+import RandomPicker from "@/components/RandomPicker";
 
 interface Vault {
   name: string;
@@ -19,6 +20,7 @@ export default function VaultPage({ params }: { params: { id: string } }) {
   const [userName, setUserName] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
 
@@ -89,6 +91,13 @@ export default function VaultPage({ params }: { params: { id: string } }) {
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">{userName}</span>
             <button
+              onClick={() => setIsPickerOpen(true)}
+              className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-3 py-2 rounded-lg text-sm transition-colors"
+              title="Surprise me"
+            >
+              🎲
+            </button>
+            <button
               onClick={() => setIsModalOpen(true)}
               className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
@@ -112,6 +121,13 @@ export default function VaultPage({ params }: { params: { id: string } }) {
             onSaved={() => { setIsModalOpen(false); refresh(); }}
             vaultId={vaultId}
             authorId={userId}
+          />
+        )}
+
+        {isPickerOpen && (
+          <RandomPicker
+            vaultId={vaultId}
+            onClose={() => setIsPickerOpen(false)}
           />
         )}
       </div>
