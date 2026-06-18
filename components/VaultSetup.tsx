@@ -5,6 +5,15 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Building2, LogIn, Loader2, Copy, Check } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { guestStore, guestIdeasForMigration } from "@/lib/guestStore";
+
+/** Upload any locally-captured guest ideas into the vault, then clear local. */
+async function migrateGuestIdeas(vaultId: string, userId: string) {
+  const rows = guestIdeasForMigration(vaultId, userId);
+  if (!rows.length) return;
+  const { error } = await supabase.from("ideas").insert(rows);
+  if (!error) guestStore.clear();
+}
 
 function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -74,6 +83,8 @@ export default function VaultSetup({ userId }: { userId: string }) {
 
     if (memberError) { setError(memberError.message); setLoading(false); return; }
 
+    await migrateGuestIdeas(vault.id, userId);
+
     setCreatedCode(vaultCode);
     setTimeout(() => router.push(`/vault/${vault.id}`), 3000);
   }
@@ -102,6 +113,8 @@ export default function VaultSetup({ userId }: { userId: string }) {
       return;
     }
 
+    await migrateGuestIdeas(vault.id, userId);
+
     router.push(`/vault/${vault.id}`);
   }
 
@@ -120,22 +133,23 @@ export default function VaultSetup({ userId }: { userId: string }) {
           animate={{ opacity: 1, scale: 1 }}
           className="w-full max-w-sm text-center"
         >
-          <div className="glass-strong rounded-2xl p-8 shadow-2xl">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/30">
-              <Check size={24} className="text-white" />
+          <div className="panel rounded-2xl p-8 shadow-2xl">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: "#34D399", boxShadow: "0 8px 28px rgba(52,211,153,0.28)" }}>
+              <Check size={24} style={{ color: "#06281C" }} />
             </div>
-            <h2 className="text-xl font-bold text-gradient mb-1">Vault created!</h2>
-            <p className="text-slate-500 text-sm mb-6">Share this code with collaborators</p>
-            <div className="bg-white/[0.04] border border-white/[0.08] rounded-xl p-4 mb-4">
-              <p className="text-xs text-slate-500 mb-2">Invite code</p>
+            <h2 className="text-xl font-bold mb-1" style={{ color: "var(--ink)" }}>Vault created</h2>
+            <p className="text-sm mb-6" style={{ color: "var(--text-2)" }}>Share this code with collaborators</p>
+            <div className="rounded-xl p-4 mb-4" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+              <p className="text-xs mb-2" style={{ color: "var(--text-3)" }}>Invite code</p>
               <div className="flex items-center justify-center gap-2">
-                <span className="text-2xl font-mono font-bold text-gradient-indigo tracking-[0.3em]">{createdCode}</span>
-                <button onClick={copyCreatedCode} className="text-slate-500 hover:text-slate-300 transition-colors">
-                  {codeCopied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+                <span className="text-2xl font-mono font-bold tracking-[0.3em]" style={{ color: "var(--accent)" }}>{createdCode}</span>
+                <button onClick={copyCreatedCode} aria-label="Copy invite code" className="transition-colors" style={{ color: "var(--text-2)" }}>
+                  {codeCopied ? <Check size={16} style={{ color: "#34D399" }} /> : <Copy size={16} />}
                 </button>
               </div>
             </div>
-            <p className="text-xs text-slate-600">Redirecting to your vault…</p>
+            <p className="text-xs" style={{ color: "var(--text-3)" }}>Redirecting to your vault…</p>
           </div>
         </motion.div>
       </div>
@@ -145,36 +159,36 @@ export default function VaultSetup({ userId }: { userId: string }) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-sm"
       >
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/30">
-            <span className="text-xl font-bold text-white">IV</span>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: "var(--accent)", boxShadow: "0 8px 28px rgba(245,165,36,0.28)" }}>
+            <span className="text-xl font-bold" style={{ color: "var(--on-accent)" }}>IV</span>
           </div>
-          <h1 className="text-2xl font-bold text-gradient">Set up your vault</h1>
-          <p className="text-slate-500 text-sm mt-1">Create a new one or join an existing vault</p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ink)" }}>Set up your vault</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-2)" }}>Create a new one or join an existing vault</p>
         </div>
 
-        <div className="glass-strong rounded-2xl p-6 shadow-2xl">
+        <div className="panel rounded-2xl p-6 shadow-2xl">
           {/* Toggle */}
           <div className="flex gap-1 bg-white/[0.04] rounded-xl p-1 mb-6 relative">
             <motion.div
               className="absolute inset-y-1 rounded-lg bg-white/[0.08]"
               initial={false}
               animate={{ left: mode === "create" ? "4px" : "50%", right: mode === "create" ? "50%" : "4px" }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             />
             {(["create", "join"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => { setMode(m); setError(""); }}
-                className={`relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  mode === m ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
-                }`}
+                className="relative z-10 flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-colors"
+                style={{ color: mode === m ? "var(--ink)" : "var(--text-2)" }}
               >
                 {m === "create" ? <><Building2 size={13} /> Create</> : <><LogIn size={13} /> Join</>}
               </button>
@@ -198,14 +212,14 @@ export default function VaultSetup({ userId }: { userId: string }) {
                   onChange={(e) => setVaultName(e.target.value)}
                   placeholder="Vault name (e.g. Our Ideas)"
                   required
-                  className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/60 transition-all"
+                  className="input-field px-4 py-3 text-sm"
                 />
-                <p className="text-xs text-slate-600">A unique invite code will be generated to share with collaborators.</p>
+                <p className="text-xs" style={{ color: "var(--text-3)" }}>A unique invite code will be generated to share with collaborators.</p>
                 {error && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>}
                 <button
                   type="submit"
                   disabled={loading || !vaultName.trim()}
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-60 text-white py-3 rounded-xl text-sm font-medium transition-all shadow-lg shadow-indigo-500/25 mt-1"
+                  className="btn-accent py-3 text-sm mt-1"
                 >
                   {loading ? <><Loader2 size={14} className="animate-spin" /> Creating…</> : "Create vault"}
                 </button>
@@ -221,7 +235,7 @@ export default function VaultSetup({ userId }: { userId: string }) {
                 className="flex flex-col gap-4"
               >
                 <div>
-                  <p className="text-xs text-slate-500 mb-3 text-center">Enter the 6-character vault code</p>
+                  <p className="text-xs mb-3 text-center" style={{ color: "var(--text-2)" }}>Enter the 6-character vault code</p>
                   <div className="flex gap-2 justify-center">
                     {codeChars.map((char, i) => (
                       <input
@@ -232,7 +246,8 @@ export default function VaultSetup({ userId }: { userId: string }) {
                         onChange={(e) => handleCodeChar(i, e.target.value)}
                         onKeyDown={(e) => handleCodeKeyDown(i, e)}
                         maxLength={1}
-                        className="w-10 h-12 text-center text-lg font-mono font-bold bg-white/[0.04] border border-white/[0.08] rounded-xl text-slate-200 focus:outline-none focus:border-indigo-500/60 transition-all uppercase"
+                        aria-label={`Code character ${i + 1}`}
+                        className="input-field w-10 h-12 text-center text-lg font-mono font-bold uppercase"
                       />
                     ))}
                   </div>
@@ -241,7 +256,7 @@ export default function VaultSetup({ userId }: { userId: string }) {
                 <button
                   type="submit"
                   disabled={loading || joinCode.length < 6}
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-60 text-white py-3 rounded-xl text-sm font-medium transition-all shadow-lg shadow-indigo-500/25"
+                  className="btn-accent py-3 text-sm"
                 >
                   {loading ? <><Loader2 size={14} className="animate-spin" /> Joining…</> : "Join vault"}
                 </button>

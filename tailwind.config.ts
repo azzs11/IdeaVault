@@ -8,11 +8,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        bg: "#0A0A0B",
         surface: {
-          base:    "#080B14",
-          raised:  "#0E1220",
-          overlay: "#141826",
-          hover:   "#1A2033",
+          DEFAULT: "#141415",
+          raised:  "#1B1B1D",
+          hover:   "#222225",
+        },
+        ink: "#F5F4F2",
+        muted: {
+          DEFAULT: "#B4AFA8",
+          dim:     "#8B857D",
+        },
+        accent: {
+          DEFAULT: "#F5A524",
+          hi:      "#FFBE4D",
         },
       },
       keyframes: {
@@ -46,7 +55,7 @@ const config: Config = {
         },
       },
       animation: {
-        fadeUp:  "fadeUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        fadeUp:  "fadeUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards",
         fadeIn:  "fadeIn 0.3s ease-out forwards",
         scaleIn: "scaleIn 0.25s ease-out forwards",
         shimmer: "shimmer 2s linear infinite",

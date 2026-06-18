@@ -58,43 +58,43 @@ export default function AuthForm() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-sm"
       >
         {/* Logo */}
         <div className="text-center mb-8">
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.4 }}
-            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/30"
+            transition={{ delay: 0.1, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: "var(--accent)", boxShadow: "0 8px 28px rgba(245,165,36,0.28)" }}
           >
-            <span className="text-xl font-bold text-white">IV</span>
+            <span className="text-xl font-bold" style={{ color: "var(--on-accent)" }}>IV</span>
           </motion.div>
-          <h1 className="text-2xl font-bold text-gradient">IdeaVault</h1>
-          <p className="text-slate-500 text-sm mt-1">Your collaborative idea space</p>
+          <h1 className="text-2xl font-bold" style={{ color: "var(--ink)" }}>IdeaVault</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-2)" }}>One shared place for every half-formed idea.</p>
         </div>
 
         {/* Card */}
-        <div className="glass-strong rounded-2xl p-6 shadow-2xl">
+        <div className="panel rounded-2xl p-6 shadow-2xl">
           {/* Mode toggle */}
           <div className="flex gap-1 bg-white/[0.04] rounded-xl p-1 mb-6 relative">
             <motion.div
               className="absolute inset-y-1 rounded-lg bg-white/[0.08]"
               initial={false}
               animate={{ left: mode === "signin" ? "4px" : "50%", right: mode === "signin" ? "50%" : "4px" }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             />
             {(["signin", "signup"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => { setMode(m); setError(""); }}
-                className={`relative z-10 flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  mode === m ? "text-slate-100" : "text-slate-500 hover:text-slate-300"
-                }`}
+                className="relative z-10 flex-1 py-2 rounded-lg text-sm font-medium transition-colors"
+                style={{ color: mode === m ? "var(--ink)" : "var(--text-2)" }}
               >
                 {m === "signin" ? "Sign in" : "Sign up"}
               </button>
@@ -117,7 +117,7 @@ export default function AuthForm() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
                     required
-                    className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/60 transition-all"
+                    className="input-field px-4 py-3 text-sm"
                   />
                 </motion.div>
               )}
@@ -129,7 +129,7 @@ export default function AuthForm() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
               required
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/60 transition-all"
+              className="input-field px-4 py-3 text-sm"
             />
 
             <div className="relative">
@@ -140,12 +140,14 @@ export default function AuthForm() {
                 placeholder="Password"
                 required
                 minLength={6}
-                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 pr-11 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/60 transition-all"
+                className="input-field px-4 py-3 pr-11 text-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: "var(--text-3)" }}
               >
                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
@@ -167,7 +169,7 @@ export default function AuthForm() {
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-60 text-white py-3 rounded-xl text-sm font-medium transition-all shadow-lg shadow-indigo-500/25 mt-1"
+              className="btn-accent py-3 text-sm mt-1"
             >
               {loading ? (
                 <><Loader2 size={15} className="animate-spin" /> {mode === "signin" ? "Signing in…" : "Creating account…"}</>

@@ -31,11 +31,17 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (!user && pathname !== "/auth") {
-    return NextResponse.redirect(new URL("/auth", request.url));
+  if (!user) {
+    // Guests work locally at /guest; real vaults and the post-login landing need an account.
+    if (pathname === "/" || pathname.startsWith("/vault")) {
+      return NextResponse.redirect(new URL("/guest", request.url));
+    }
+    // /auth and /guest are open to guests.
+    return supabaseResponse;
   }
 
-  if (user && pathname === "/auth") {
+  // Signed in: no reason to sit on the guest or auth screens.
+  if (pathname === "/auth" || pathname === "/guest") {
     return NextResponse.redirect(new URL("/", request.url));
   }
 

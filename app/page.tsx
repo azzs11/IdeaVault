@@ -10,7 +10,7 @@ export default function Home() {
   useEffect(() => {
     async function redirect() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) { router.push("/guest"); return; }
 
       const { data: membership } = await supabase
         .from("vault_members")
@@ -30,8 +30,8 @@ export default function Home() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full animate-spin" style={{ border: "2px solid var(--accent)", borderTopColor: "transparent" }} />
     </div>
   );
 }
