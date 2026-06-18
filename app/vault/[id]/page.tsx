@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import QuickAdd from "@/components/QuickAdd";
 import AddIdeaModal from "@/components/AddIdeaModal";
 import IdeaGrid from "@/components/IdeaGrid";
+import KanbanBoard from "@/components/KanbanBoard";
 import RandomPicker from "@/components/RandomPicker";
 
 interface Vault {
@@ -13,12 +14,15 @@ interface Vault {
   code: string;
 }
 
+type View = "grid" | "kanban";
+
 export default function VaultPage({ params }: { params: { id: string } }) {
   const vaultId = params.id;
   const [vault, setVault] = useState<Vault | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [view, setView] = useState<View>("grid");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -71,7 +75,7 @@ export default function VaultPage({ params }: { params: { id: string } }) {
 
   return (
     <main className="min-h-screen bg-gray-950 text-gray-100">
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         <header className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{vault.name}</h1>
@@ -90,6 +94,29 @@ export default function VaultPage({ params }: { params: { id: string } }) {
 
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">{userName}</span>
+
+            {/* View toggle */}
+            <div className="flex bg-gray-800 border border-gray-700 rounded-lg p-1 gap-1">
+              <button
+                onClick={() => setView("grid")}
+                title="Grid view"
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  view === "grid" ? "bg-gray-700 text-gray-100" : "text-gray-400 hover:text-gray-200"
+                }`}
+              >
+                ⊞ Grid
+              </button>
+              <button
+                onClick={() => setView("kanban")}
+                title="Kanban view"
+                className={`px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  view === "kanban" ? "bg-gray-700 text-gray-100" : "text-gray-400 hover:text-gray-200"
+                }`}
+              >
+                ☰ Board
+              </button>
+            </div>
+
             <button
               onClick={() => setIsPickerOpen(true)}
               className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 px-3 py-2 rounded-lg text-sm transition-colors"
@@ -113,7 +140,12 @@ export default function VaultPage({ params }: { params: { id: string } }) {
         </header>
 
         <QuickAdd onSaved={refresh} vaultId={vaultId} authorId={userId} />
-        <IdeaGrid refreshKey={refreshKey} vaultId={vaultId} userId={userId} />
+
+        {view === "grid" ? (
+          <IdeaGrid refreshKey={refreshKey} vaultId={vaultId} userId={userId} />
+        ) : (
+          <KanbanBoard refreshKey={refreshKey} vaultId={vaultId} />
+        )}
 
         {isModalOpen && (
           <AddIdeaModal
