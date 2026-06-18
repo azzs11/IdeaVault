@@ -8,9 +8,11 @@ import type { Domain, Status } from "@/lib/types";
 interface Props {
   onClose: () => void;
   onSaved: () => void;
+  vaultId: string;
+  authorId: string;
 }
 
-export default function AddIdeaModal({ onClose, onSaved }: Props) {
+export default function AddIdeaModal({ onClose, onSaved, vaultId, authorId }: Props) {
   const [content, setContent] = useState("");
   const [domain, setDomain] = useState<Domain>("Tech");
   const [status, setStatus] = useState<Status>("New");
@@ -29,14 +31,11 @@ export default function AddIdeaModal({ onClose, onSaved }: Props) {
       domain,
       status,
       summary: null,
+      vault_id: vaultId,
+      author_id: authorId,
     });
 
-    if (dbError) {
-      setError(dbError.message);
-      setLoading(false);
-      return;
-    }
-
+    if (dbError) { setError(dbError.message); setLoading(false); return; }
     onSaved();
   }
 
@@ -48,12 +47,7 @@ export default function AddIdeaModal({ onClose, onSaved }: Props) {
       <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-semibold text-gray-100">New Idea</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white transition-colors text-xl leading-none"
-          >
-            ✕
-          </button>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors text-xl leading-none">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -76,12 +70,9 @@ export default function AddIdeaModal({ onClose, onSaved }: Props) {
                 disabled={loading}
                 className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-60"
               >
-                {DOMAINS.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
+                {DOMAINS.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             </div>
-
             <div className="flex flex-col gap-1.5">
               <label className="text-xs text-gray-400 font-medium">Status</label>
               <select
@@ -90,9 +81,7 @@ export default function AddIdeaModal({ onClose, onSaved }: Props) {
                 disabled={loading}
                 className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-60"
               >
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+                {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           </div>
@@ -100,12 +89,7 @@ export default function AddIdeaModal({ onClose, onSaved }: Props) {
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
           <div className="flex gap-3 justify-end pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-40"
-            >
+            <button type="button" onClick={onClose} disabled={loading} className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors disabled:opacity-40">
               Cancel
             </button>
             <button

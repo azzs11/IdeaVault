@@ -5,33 +5,33 @@ import { supabase } from "@/lib/supabase";
 import { DOMAINS } from "@/lib/types";
 import type { Domain } from "@/lib/types";
 
-// Browser SpeechRecognition types
 declare global {
   interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    SpeechRecognition: new () => any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    webkitSpeechRecognition: new () => any;
   }
 }
 
 interface Props {
   onSaved: () => void;
+  vaultId: string;
+  authorId: string;
 }
 
-export default function QuickAdd({ onSaved }: Props) {
+export default function QuickAdd({ onSaved, vaultId, authorId }: Props) {
   const [content, setContent] = useState("");
   const [domain, setDomain] = useState<Domain>("Tech");
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const [error, setError] = useState("");
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null);
 
   function toggleVoice() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SR) {
-      setError("Voice input isn't supported in this browser. Try Chrome.");
-      return;
-    }
+    if (!SR) { setError("Voice input isn't supported in this browser. Try Chrome."); return; }
 
     if (listening) {
       recognitionRef.current?.stop();
@@ -43,19 +43,13 @@ export default function QuickAdd({ onSaved }: Props) {
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
-
-    recognition.onresult = (e) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
       const transcript = e.results[0][0].transcript;
       setContent((prev) => (prev ? `${prev} ${transcript}` : transcript));
     };
-
-    recognition.onerror = () => {
-      setListening(false);
-    };
-
-    recognition.onend = () => {
-      setListening(false);
-    };
+    recognition.onerror = () => setListening(false);
+    recognition.onend = () => setListening(false);
 
     recognitionRef.current = recognition;
     recognition.start();
@@ -74,13 +68,11 @@ export default function QuickAdd({ onSaved }: Props) {
       domain,
       status: "New",
       summary: null,
+      vault_id: vaultId,
+      author_id: authorId,
     });
 
-    if (dbError) {
-      setError(dbError.message);
-      setLoading(false);
-      return;
-    }
+    if (dbError) { setError(dbError.message); setLoading(false); return; }
 
     setContent("");
     setDomain("Tech");
@@ -102,8 +94,6 @@ export default function QuickAdd({ onSaved }: Props) {
           disabled={loading}
           className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-60"
         />
-
-        {/* Mic button */}
         <button
           type="button"
           onClick={toggleVoice}
@@ -128,15 +118,11 @@ export default function QuickAdd({ onSaved }: Props) {
           disabled={loading}
           className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-60"
         >
-          {DOMAINS.map((d) => (
-            <option key={d} value={d}>{d}</option>
-          ))}
+          {DOMAINS.map((d) => <option key={d} value={d}>{d}</option>)}
         </select>
-
         <span className="text-xs text-gray-600 flex-1">
           {listening ? "🎙 Listening…" : "Status defaults to New"}
         </span>
-
         <button
           type="submit"
           disabled={loading || !content.trim()}
